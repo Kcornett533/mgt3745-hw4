@@ -12,17 +12,19 @@ radius: 4px
 
 # STYLE.md
 
-## Rationale
-- **color-primary**: Navy `#1E3A8A` creates an authoritative scientific aesthetics suited for biomedical audit trails.
-- **color-accent**: Royal blue `#1D4ED8` highlights primary action buttons without failing WCAG contrast ratios.
-- **font-body / font-heading**: Native system sans-serif font stack avoids external network webfont requests.
-- **space-unit**: Base 8px spatial grid enforces predictable UI margins.
-- **font-size-min**: Minimum 12px font size ensures legibility for dense technical metadata strings.
+---
+tokens: [fetch, async, bind, DOMContentLoaded]
+---
+# Style Guidelines
+
+1. **fetch**: Used for all client-to-server communication rather than XMLHttpRequest.
+2. **async**: Used for cleaner promise handling in network calls.
+3. **bind**: Mandatory for passing user input to Cloudflare D1 to prevent SQL injection.
+4. **DOMContentLoaded**: Ensures scripts don't run until the HTML is fully parsed.
 
 ## Refusals
-1. **No unexpected popups or modals:** Interrupts researcher workflow and violates peak-end usability rules.
-2. **No arbitrary user color selections:** Random color assignments erode structural visual hierarchy.
-
+* I refused Copilot's suggestion to use string-concatenation (`${userInput}`) inside SQL queries, strictly enforcing `bind()` instead.
+* I refused to leave API URLs hardcoded across multiple functions, instead pulling the URL into a single constant at the top of the file.
 ## Sources
 - Admired: Stripe Dashboard (clean structural layout and precise data tables).
 - Resented: Legacy Academic Web Portals (cluttered styling with illegible contrast ratios).
