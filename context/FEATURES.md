@@ -12,12 +12,13 @@ Researchers publishing novel methodologies face pushback proving the validity of
 
 ## Verification Table
 
-| Statement | HW3 verdict | HW4 verdict | Reason |
-|---|---|---|---|
-| Save a valid entry | PASS | PASS | Form submits and persists entry to Cloudflare D1 via POST /entries. |
-| Reject empty entry | PASS | PASS | Worker returns 400 if required fields are missing. |
-| Survive cleared cache | CANNOT TEST YET | PASS | Tested: cleared site data and opened in incognito window; entries persisted. |
-| Server unreachable | N/A | PASS | Simulated by disabling network interface; UI displays red warning badge "SERVER UNREACHABLE". |
-| Server returns 500 | N/A | PASS | Verified by removing DB binding in local dev; returns "server error" without throwing console exception. |
-| Server returns 400 | N/A | PASS | Tested by submitting a 10-char hash; Worker returns status 400 and displays inline error. |
-| Second client writes to the same table | N/A | DEFERRED | Deferred per ADR-002: multi-client conflict resolution out of single-user MVP scope. |
+
+| Acceptance Statement | Test Method | Result | Notes |
+| :--- | :--- | :--- | :--- |
+| System generates unique `MAN-` IDs. | Create 3 entries, inspect DOM array. | PASS | IDs generated accurately. |
+| System validates 64-char hex signatures. | Enter a 63-char string and submit. | PASS | Form rejects input successfully. |
+| Data survives browser cache clear. | Clear site data, refresh page. | PASS | *(Formerly CANNOT TEST YET)* Now fetches directly from D1 database via Worker. |
+| Network is down / offline. | Turn off Wi-Fi, attempt POST. | PASS | UI displays error badge without throwing console crash. |
+| Server returns 400 Bad Request. | Submit empty payload via cURL. | PASS | Worker returns 400 validation error correctly. |
+| Server returns 500 error. | Force script error on worker. | CANNOT TEST YET | Do not yet know how to reliably simulate a server crash from the client side. |
+| Second client writes to same table. | Two users submit simultaneously. | DEFERRED | Real-time conflict resolution is deferred as per ADR-002. |
