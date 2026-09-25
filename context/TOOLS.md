@@ -1,4 +1,4 @@
-Markdown
+
 # TOOLS.md: The Trust Boundary Ledger
 
 | Service | Trusted with | Credentials live | Crossing statement | Switching cost |
