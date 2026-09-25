@@ -1,20 +1,20 @@
-# /context
+# Data Provenance Audit Trail Generator
 
-The Context Scaffold. Eleven files, read by humans and by agents. Nine are
-real as of HW4; three remain previews until their module arrives.
+## What
 
-| File | Status | Since |
-|---|---|---|
-| PROJECT.md | real | HW1 (as PROBLEM.md), graduated HW3 |
-| USERS.md | real | HW2 |
-| FEATURES.md | real | HW2 |
-| STANDARDS.md | real | HW3 |
-| ARCHITECTURE.md | real | HW3 |
-| CLAUDE.md | real | HW3 |
-| TOOLS.md | real | HW4 |
-| STYLE.md | real (present, graded HW5) | HW4 |
-| SKILLS.md | preview | Module 5 |
-| EVALS.md | preview | Module 5 |
-| AGENTS.md | preview | Module 6 |
+HW3 repository: [https://github.com/mgt3745-hw3](https://github.com/YOUR-USERNAME/mgt3745-hw3)
 
-`/curiosity` holds five optional, ungraded files. An empty curiosity file is honest.
+Academic research labs face publication delays when reviewers challenge custom execution parameters ([PROJECT.md](docs/PROJECT.md), [FEATURES.md](docs/FEATURES.md)). This application enables researchers to record digital file signatures and parameter logs to export verifiable JSON provenance manifests. In HW4, data moves from browser local storage to a remote Cloudflare D1 SQLite database to ensure records persist across browser sessions and cache wipes ([ARCHITECTURE.md](docs/ARCHITECTURE.md)).
+
+## See It Work
+
+![See it work](docs/see-it-work.gif)
+
+```mermaid
+flowchart LR
+  A[Page loads] --> B[GET /entries]
+  B --> C[render]
+  D[User submits] --> E[POST /entries]
+  E -->|201| B
+  E -->|400| F[showError]
+  B -->|network fails| F
