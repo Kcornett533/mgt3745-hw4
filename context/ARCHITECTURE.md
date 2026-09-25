@@ -1,52 +1,29 @@
-# Architecture
+## The Gate, Rerun
 
-## The Gate: HW4 rerun
+| Option | Ease of Build (30%) | Control & Privacy (30%) | Maintenance Burden (20%) | Switching Cost (20%) | Weighted Total |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Build (Cloudflare Worker + D1)** | 8/10 | 9/10 | 8/10 | 7/10 | **8.1** |
+| **Buy (Supabase / Firebase BaaS)** | 9/10 | 6/10 | 9/10 | 4/10 | **7.1** |
+| **Delegate (Bolt.new / Managed AI)**| 9/10 | 3/10 | 9/10 | 2/10 | **5.8** |
 
-Where should entries live now that they must survive a cleared cache?
-
-| Criterion | Weight | Build (Worker + D1) | Buy (hosted BaaS) | Delegate (AI builder hosts it) |
-|---|---:|---:|---:|---:|
-| Cost to start | 4 | 5 (Score: 20) | 2 (Score: 8) | 5 (Score: 20) |
-| Cost to maintain | 3 | 5 (Score: 15) | 2 (Score: 6) | 5 (Score: 15) |
-| Time to working | 5 | 4 (Score: 20) | 3 (Score: 15) | 5 (Score: 25) |
-| Inspectability | 4 | 5 (Score: 20) | 1 (Score: 4) | 4 (Score: 16) |
-| Switching cost | 2 | 4 (Score: 8) | 2 (Score: 4) | 2 (Score: 4) |
-| Fit to spec | 5 | 5 (Score: 25) | 3 (Score: 15) | 4 (Score: 20) |
-| **Weighted total** | | **108** | **52** | **100** |
-
-*Notes on Switching Cost:* Scored 4 for Build based on Session B hands-on experience: migrating away from Cloudflare D1 requires running `wrangler d1 export` to generate a standard SQLite dump and adapting endpoint paths in `worker.js`.
+*Note on Switching Cost:* Scored directly from Session B hands-on experience moving data from `localStorage` to Cloudflare D1 via SQL bindings. Modifying two `localStorage` calls into `fetch()` wrappers demonstrated that client-server decoupling carries low operational friction when raw SQL schemas remain standardized.
 
 ---
 
-## ADR-001: Pure Client-Side Browser Architecture with LocalStorage Persistence
-* **Title and date:** ADR-001: Pure Client-Side Browser Architecture with LocalStorage Persistence (September 17, 2026)
-* **Status:** Superseded by ADR-002
-* **Door / concrete acquisition and execution choice:** Two-way door. The choice to build a pure client-side web application using native ES6 JavaScript and `localStorage` can be reversed or migrated to a backend server architecture later if scale demands it.
-* **Context:** Researchers publishing experimental findings require a frictionless method to generate audit trails without exposing raw data files or uploading sensitive algorithm source code to remote servers.
-* **Decision:** Implement a pure client-side web application using HTML5, CSS3, and Vanilla JavaScript. State management and manifest persistence rely strictly on browser `localStorage` under key `mgt3745.provenance_manifests.v1`.
-* **Consequences and revisit trigger:**
-  * **Consequences:** Zero hosting costs, complete user privacy, instantaneous execution (< 5% runtime overhead). Storage capacity constrained to browser quota limits (~5 MB).
-  * **Revisit Trigger:** Re-evaluate if user requirements shift to multi-user collaboration or centralized institutional registries.
+## ADR-002: Cloudflare Worker and D1 Database Persistence
 
----
-
-## ADR-002: Entries move from localStorage to Cloudflare D1
-
-**Status:** Proposed  
-**Supersedes:** ADR-001  
+* **Status:** Accepted
+* **Supersedes:** ADR-001 (browser-only `localStorage` retention marked superseded; original text preserved for historical record)
+* **Date:** September 24, 2026
 
 ### Context
-Data entered into the application (script names, execution parameters, SHA-256 hashes, and researcher notes) leaves the user's browser and crosses over to Cloudflare D1 (a serverless SQLite database) hosted by Cloudflare, Inc. under their standard free-tier terms of service. HTTP request metadata (client IP, timestamp, headers) is logged by default. I am accountable for data governance and security compliance.
+HW3 retained provenance manifest logs inside browser `localStorage` as a zero-infrastructure choice. That choice is no longer sufficient, as audit manifests must survive cleared browser caches and support peer verification across multiple client machines. 
+
+**The Trust Boundary Crossing:** Data (pipeline name, execution parameters, SHA-256 raw file signatures, and researcher notes) leaves the user's browser over HTTPS and crosses to Cloudflare Workers and Cloudflare D1 (managed SQLite at the edge) under Cloudflare's standard Terms of Service and Privacy Policy. Kamyaab Cornett is accountable for maintaining parameterized database queries (`bind()`), credentials in `wrangler.toml`, and CORS boundary security.
 
 ### Decision
-Migrate primary manifest persistence from browser `localStorage` to Cloudflare D1 using Cloudflare Workers for backend API endpoints (`GET /entries` and `POST /entries`).
-
-### Alternatives considered
-1. **Retain `localStorage`:** Rejected because data cannot survive cache wipes or sync across devices/reviewers.
-2. **Third-Party BaaS (e.g., Supabase):** Rejected due to vendor lock-in, higher setup complexity, and potential data privacy overhead.
+We will deploy a serverless edge backend using Cloudflare Workers bound to a Cloudflare D1 SQL database (`mgt3745-entries`) for persistent storage of all execution manifest logs.
 
 ### Consequences
-* **Negative Consequence:** System availability is now tied to network health and Cloudflare runtime status; offline data logging is no longer natively supported. Multi-user write access creates potential race conditions or concurrent entry ordering conflicts.
-
-### Revisit trigger
-Re-evaluate if Cloudflare modifies free-tier quota limits, introducing security regulations requiring on-premise hardware storage, or if offline-first P2P syncing becomes mandatory.
+* **Positive:** Provenance entries persist permanently across browser clearing, device switches, and multi-user audit queries.
+* **Negative (What Got Harder):** Offline use is no longer supported out of the box; network failures or server outages (500/400 errors) now require explicit client-side handling to prevent unhandled console exceptions.
