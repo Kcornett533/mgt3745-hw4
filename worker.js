@@ -1,18 +1,4 @@
 // worker.js
-// The whole server. Read it before you deploy it.
-//
-// One function. Cloudflare calls it with every request that reaches your
-// workers.dev URL and sends back whatever Response you return.
-//
-// Four things to recognize here, because you will need to recognize them
-// later in code you did not write:
-//   env.DB      the D1 binding from wrangler.toml (no connection string, nothing to leak)
-//   bind(?)     the user's value goes in as a parameter, never pasted into the SQL
-//   status 400  the EARS "unwanted behavior" row, executable
-//   CORS        headers that tell the browser your page is allowed to call this Worker
-
-// Session B uses "*" so everyone's page works on the first try.
-// HW4 Craft credit: replace "*" with your page's origin once it is deployed.
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, OPTIONS",
@@ -21,9 +7,6 @@ const CORS = {
 
 export default {
   async fetch(request, env) {
-    // Anything that throws below becomes a readable 500 instead of a bare
-    // "Error 1101: Worker threw exception". The message names the cause,
-    // which is what your verification table needs.
     try {
       return await handle(request, env);
     } catch (err) {
@@ -35,27 +18,26 @@ export default {
 async function handle(request, env) {
   const url = new URL(request.url);
 
-  // Browsers send an OPTIONS "preflight" before a JSON POST from another
-  // origin. Answer it with the CORS headers and nothing else.
-  // (Not on the Session B slide; it is the one line the slide left out.)
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS });
   }
 
-  // The most common Session B failure: the D1 binding did not attach because
-  // wrangler.toml still says PASTE_ID_HERE or the id was pasted badly.
   if (!env.DB) {
     return new Response(
       "server error: no D1 binding. Check database_id in wrangler.toml and redeploy.",
-      { status: 500, headers: CORS });
+      { status: 500, headers: CORS }
+    );
   }
 
+  // GET /entries - Fetch all provenance records in creation order
   if (request.method === "GET" && url.pathname === "/entries") {
     const { results } = await env.DB.prepare(
-      "SELECT * FROM entries ORDER BY id").all();
-    return Response.json(results, { headers: CORS });
+      "SELECT id, manifest_id AS id_str, pipeline_name AS pipelineName, execution_params AS executionParams, file_signature AS fileSignature, notes, created_at AS timestamp FROM entries ORDER BY id DESC"
+    ).all();
+    return Response.json(results || [], { headers: CORS });
   }
 
+  // POST /entries - Store a new provenance record with EARS validation
   if (request.method === "POST" && url.pathname === "/entries") {
     let body;
     try {
@@ -63,13 +45,28 @@ async function handle(request, env) {
     } catch {
       return new Response("body must be JSON", { status: 400, headers: CORS });
     }
-    if (!body.text) {
-      return new Response("text required", { status: 400, headers: CORS });
+
+    // Required fields check
+    if (!body.pipelineName || !body.executionParams || !body.fileSignature) {
+      return new Response("pipelineName, executionParams, and fileSignature are required", { status: 400, headers: CORS });
     }
-    // HW4 Part 3: add one more validation rule here that traces to an
-    // EARS unwanted-behavior statement in your FEATURES.md.
-    await env.DB.prepare("INSERT INTO entries (text) VALUES (?)")
-      .bind(body.text).run();
+
+    // EARS Unwanted-Behavior Validation Rule: Strict 64-character Hexadecimal SHA-256 Signature
+    const hex64Regex = /^[a-fA-F0-9]{64}$/;
+    if (!hex64Regex.test(body.fileSignature)) {
+      return new Response("fileSignature must be exactly 64 hexadecimal characters", { status: 400, headers: CORS });
+    }
+
+    const manifestId = body.id || ('MAN-' + Date.now());
+    const notes = body.notes || 'N/A';
+
+    // Safe SQL Binding (No string concatenation)
+    await env.DB.prepare(
+      "INSERT INTO entries (manifest_id, pipeline_name, execution_params, file_signature, notes) VALUES (?, ?, ?, ?, ?)"
+    )
+      .bind(manifestId, body.pipelineName, body.executionParams, body.fileSignature, notes)
+      .run();
+
     return new Response(null, { status: 201, headers: CORS });
   }
 
