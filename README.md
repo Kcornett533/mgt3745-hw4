@@ -1,71 +1,38 @@
-# Entries: Data Leaves the Browser
+# MGT 3745 - HW4: Data Provenance Audit Trail Generator
 
-> Replace this title and every *italic prompt* with your own words. Six
-> sections, in this order: What, See It Work, How to Run, Status, Links,
-> AI Use. GitHub renders this page; it can show, not only tell.
+A lightweight web application for recording, auditing, and persisting data provenance manifests. Built with pure HTML/CSS/JavaScript and backed by a Cloudflare Workers serverless backend with Cloudflare D1 SQL storage.
 
-## What
+- **Deployed URL:** [https://mgt3745-hw4.YOUR-SUBDOMAIN.workers.dev/](https://mgt3745-hw4.YOUR-SUBDOMAIN.workers.dev/)
+- **HW3 Repository:** [https://github.com/yourusername/mgt3745-hw3](https://github.com/yourusername/mgt3745-hw3)
 
-*HW3 repository: [link it here](https://github.com/YOUR-USER/mgt3745-hw3)*
+---
 
-*One paragraph naming the problem, the user, and the feature, with links to
-[PROJECT.md](context/PROJECT.md) and [FEATURES.md](context/FEATURES.md).
-One sentence on where data now lives and why (ADR-002).*
+## What It Is
+
+The **Data Provenance Audit Trail Generator** captures execution parameters, input file signatures (SHA-256 hashes), script names, and researcher notes to produce immutable JSON records for scientific peer review. 
+
+In HW3, entries were stored locally in the browser (`localStorage`). For HW4, data leaves the browser client and persists in an edge-managed Cloudflare D1 SQLite database via a serverless Cloudflare Worker API.
+
+---
 
 ## See It Work
 
-*A GIF or screenshot in `/docs` showing an entry surviving a cleared cache
-or appearing in a second browser. Evidence and storefront at once.*
+![Data Provenance Audit Trail Generator Persistence Demo](docs/see-it-work.png)
 
-![See it work](docs/see-it-work.gif)
+*The record above demonstrates a provenance manifest entry surviving a browser cache refresh and persisting across independent client sessions via Cloudflare D1.*
 
-```mermaid
-flowchart LR
-  A[Page loads] --> B[GET /entries]
-  B --> C[render]
-  D[User submits] --> E[POST /entries]
-  E -->|201| B
-  E -->|400| F[showError]
-  B -->|network fails| F
-```
+---
 
 ## How to Run
 
-Deployed: *`https://mgt3745-hw4.YOUR-SUBDOMAIN.workers.dev/entries`*
+### Live Web Application
+Access the production application directly via your browser or interact with the REST API:
+- **Frontend App:** Open `index.html` in any browser or launch via Live Server.
+- **REST API Endpoint:** `GET https://mgt3745-hw4.YOUR-SUBDOMAIN.workers.dev/entries`
 
-From a fresh Codespace:
-
-1. Open the repository in a Codespace. The devcontainer installs xdg-utils and runs `npm install`.
-2. `npx wrangler login --device`, then follow [docs/SESSION_B_COMMANDS.md](docs/SESSION_B_COMMANDS.md)
-   to create the database, run the schema, and deploy.
-3. Paste the deployed URL into `app.js` as `API`.
-4. Right-click `index.html`, choose **Open with Live Server**.
-
-To run the Worker locally instead: `npm run dev` (port 8787, local D1 emulator).
-
-## Status
-
-| Feature | EARS statement | Verdict |
-|---|---|---|
-| *Save an entry* | *WHEN a valid entry is submitted, THE SYSTEM SHALL store it* | *PASS* |
-| *Reject empty entry* | *IF text is missing, THEN THE SYSTEM SHALL reject with a reason* | *PASS* |
-| *Survive cleared cache* | *THE SYSTEM SHALL return stored entries on any device* | *PASS* |
-| *Network down* | *IF the server is unreachable, THE SYSTEM SHALL tell the user* | *CANNOT TEST YET* |
-| *Two clients, one table* | *...* | *DEFERRED (ADR-002)* |
-
-*Full verification table lives in [FEATURES.md](context/FEATURES.md).*
-
-## Links
-
-Reading order for a stranger: [PROJECT.md](context/PROJECT.md) →
-[USERS.md](context/USERS.md) → [FEATURES.md](context/FEATURES.md) →
-[ARCHITECTURE.md](context/ARCHITECTURE.md) → [STANDARDS.md](context/STANDARDS.md) →
-[TOOLS.md](context/TOOLS.md) → [STYLE.md](context/STYLE.md) →
-[CLAUDE.md](context/CLAUDE.md)
-
-## AI Use
-
-*Three proto-DDR questions. What did the agent write? What did you check,
-and how? What could you not fully verify, and what did you do about it?
-For the Worker specifically: name the thing you could not fully inspect.
-Hours spent: ___.*
+### Running Locally
+1. Clone the repository and install dependencies:
+   ```bash
+   git clone [https://github.com/yourusername/mgt3745-hw4.git](https://github.com/yourusername/mgt3745-hw4.git)
+   cd mgt3745-hw4
+   npm install
